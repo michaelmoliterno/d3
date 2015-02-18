@@ -90,6 +90,23 @@ var area = d3.svg.area()
     .y0(height)
     .y1(function(d) { return y(d.prob); });
 
+    var area10 = d3.svg.area()
+    .interpolate("monotone")
+    .x(function(d) { return x(d.bmi); })
+    .y0(height)
+    .y1(function(d) { return y(d.prob10); });
+
+    var area20 = d3.svg.area()
+    .interpolate("monotone")
+    .x(function(d) { return x(d.bmi); })
+    .y0(height)
+    .y1(function(d) { return y(d.prob20); });
+
+
+
+
+
+
 
  var area2 = d3.svg.area()
     .interpolate("monotone")
@@ -116,7 +133,6 @@ var svg = d3.select("body").append("svg")
 
 
 
-//??????
 svg.append("defs").append("clipPath")
     .attr("id", "clip")
   .append("rect")
@@ -141,6 +157,8 @@ d3.tsv("data.tsv", function(error, data) {
   data.forEach(function(d) {
     d.bmi = +d.bmi;
     d.prob = +d.prob;
+    d.prob10 = +d.prob*.7;
+    d.prob20 = +d.prob*1.5;
   });
 
   x.domain(d3.extent(data, function(d) { return d.bmi; }));
@@ -154,6 +172,17 @@ d3.tsv("data.tsv", function(error, data) {
       .datum(data)
       .attr("class", "area")
       .attr("d", area);
+
+    focus.append("path")
+      .datum(data)
+      .attr("class", "area")
+      .attr("d", area10);
+
+
+     focus.append("path")
+      .datum(data)
+      .attr("class", "area")
+      .attr("d", area20);
 
 
 
