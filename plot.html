@@ -79,6 +79,7 @@ var margin = {top: 10, right: 10, bottom: 100, left: 40},
 
 var xmain = d3.scale.linear().range([0, width]);
 var	xbrush = d3.scale.linear().range([0, width]);
+
 var ymain = d3.scale.linear().range([height, 0]);
 var	ybrush = d3.scale.linear().range([height2, 0]);
 
@@ -91,26 +92,60 @@ var yAxis = d3.svg.axis()
 
 var brush = d3.svg.brush()
     .x(xbrush)
+    //.y(ybrush)
     .on("brush", brushed);
 
       ///this is needed for the brushed part!		
 function brushed() {
   xmain.domain(brush.empty() ? xbrush.domain() : brush.extent());
+
+
+  // console.log(xmain.domain()[0]);
+  // console.log(xmain.domain()[1]);
+  // data.forEach()
+
+  var dataFiltered = data.filter(function(d, i) {
+    if ( (d.bmi>= xmain.domain()[0]) && (d.bmi <= xmain.domain()[1]) ) {
+      return d.prob_15;
+    }
+  })
+  
+
+
+	var max = d3.max(dataFiltered.map(function(d) { return d.prob_15; }));
+	console.log(max);
+
+	if (typeof max === "undefined") {
+    	ymain.domain(brush.empty() ? ybrush.domain() : y_axis_range);
+	} else {
+		y_axis_range = [0, max*1.1]
+		ymain.domain(brush.empty() ? ybrush.domain() : y_axis_range);
+	}
+
+
+  	
+  	
+
+
+
+
   focus.selectAll("path.focusdata").attr("d", function (prob_when) { 
       	return areaMain(prob_when)(data); 
     });
 
-
   focus.select(".x.axis").call(xAxis);
+  focus.select(".y.axis").call(yAxis);
 }
 
 
 var areaMain = function (prob_when) {
 	return d3.svg.area()
     	.interpolate("monotone")
-    	.x(function(d) { return xmain(d.bmi); })
+    	.x(function(d) { 
+    		return xmain(d.bmi); })
     	.y0(height)
-    	.y1(function(d) { return ymain(d[prob_when]); 
+    	.y1(function(d) { 
+    		return ymain(d[prob_when]); 
     });
 };
 
@@ -216,8 +251,10 @@ initial_values.forEach(function(element) {
   // });
 
 
+  //
   xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
-  ymain.domain(d3.extent(data, function(d) { return d.prob_15; }));
+  y_axis_range = d3.extent(data, function(d) { return d.prob_15; });
+  ymain.domain(y_axis_range);
   xbrush.domain(xmain.domain());
   ybrush.domain(ymain.domain());
 
@@ -229,6 +266,7 @@ initial_values.forEach(function(element) {
     .attr('clip-path', 'url(#clip)')
     //.attr('fill','none')
     .attr('d', function (prob_when) {
+    	//console.log('data', data);
       return areaMain(prob_when)(data);
     })
     .attr('class', function (prob_when) {
@@ -238,7 +276,7 @@ initial_values.forEach(function(element) {
 
 
   context.selectAll('path')
-    .data(['prob_now', 'prob_5','prob_15'])
+    .data(pdata)
   .enter()
     .append('path')
     .attr('fill','none')
