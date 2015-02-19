@@ -23,15 +23,17 @@ body {
   stroke: steelblue;
 }
 
-
-
-
-.area {
-  fill: steelblue;
-  opacity: .3;
-  clip-path: url(#clip);
+path {
+    fill:none;
+    stroke:white;
+    stroke-width:2px;
 }
 
+.area {
+  fill: none;
+  opacity: .2;
+  clip-path: url(#clip);
+}
 
 .line {
   fill: none;
@@ -45,6 +47,17 @@ body {
   shape-rendering: crispEdges;
 }
 
+
+.path_prob_now {
+    stroke:green;
+}
+.path_prob_5 {
+    stroke:red;
+}
+
+.path_prob_15 {
+    stroke:blue;
+}
 
 </style>
 
@@ -63,56 +76,64 @@ var margin = {top: 10, right: 10, bottom: 100, left: 40},
     height2 = 500 - margin2.top - margin2.bottom;
 
 
-var x = d3.scale.linear().range([0, width]);
-var	x2 = d3.scale.linear().range([0, width]);
-var y = d3.scale.linear().range([height, 0]);
-var	y2 = d3.scale.linear().range([height2, 0]);
+var xmain = d3.scale.linear().range([0, width]);
+var	xbrush = d3.scale.linear().range([0, width]);
+var ymain = d3.scale.linear().range([height, 0]);
+var	ybrush = d3.scale.linear().range([height2, 0]);
 
-var xAxis = d3.svg.axis().scale(x).orient("bottom");
-var	xAxis2 = d3.svg.axis().scale(x2).orient("bottom");
+var xAxis = d3.svg.axis().scale(xmain).orient("bottom");
+var	xAxis2 = d3.svg.axis().scale(xbrush).orient("bottom");
 
 var yAxis = d3.svg.axis()
-    .scale(y)
+    .scale(ymain)
     .orient("left");
 
 var brush = d3.svg.brush()
-    .x(x2)
+    .x(xbrush)
     .on("brush", brushed);
+
+      ///this is needed for the brushed part!		
+function brushed() {
+  xmain.domain(brush.empty() ? xbrush.domain() : brush.extent());
+  //focus.selectAll("path.data").attr("d",function (col) { return areaMain(col)(data); })
+   focus.selectAll("path.focusdata").attr("d", function (prob_when) { 
+   		//console.log(prob_when);
+   		//blah = areaMain(prob_when)(data);
+      	return areaMain(prob_when)(the_data); 
+    });
+
+
+  focus.select(".x.axis").call(xAxis);
+}
 
 
 // var line = d3.svg.line()
 //     .x(function(d) { return x(d.bmi); })
-//     .y(function(d) { return y(d.prob); });
+//     .y(function(d) { return y(d.prob_now); });
 
-var area = d3.svg.area()
-    .interpolate("monotone")
-    .x(function(d) { return x(d.bmi); })
-    .y0(height)
-    .y1(function(d) { return y(d.prob); });
+// var line10 = d3.svg.line()
+//     .x(function(d) { return x(d.bmi); })
+//     .y(function(d) { return y(d.prob_10); });
 
-    var area10 = d3.svg.area()
-    .interpolate("monotone")
-    .x(function(d) { return x(d.bmi); })
-    .y0(height)
-    .y1(function(d) { return y(d.prob10); });
-
-    var area20 = d3.svg.area()
-    .interpolate("monotone")
-    .x(function(d) { return x(d.bmi); })
-    .y0(height)
-    .y1(function(d) { return y(d.prob20); });
+var areaMain = function (prob_when) {
+	return d3.svg.area()
+    	.interpolate("monotone")
+    	.x(function(d) { return xmain(d.bmi); })
+    	.y0(height)
+    	.y1(function(d) { return ymain(d[prob_when]); 
+    });
+};
 
 
+var areaBrush = function (prob_when) {
+	return d3.svg.area()
+    	.interpolate("monotone")
+    	.x(function(d) { return xbrush(d.bmi); })
+    	.y0(height2)
+    	.y1(function(d) { return ybrush(d[prob_when]); 
+    });
+};
 
-
-
-
-
- var area2 = d3.svg.area()
-    .interpolate("monotone")
-    .x(function(d) { return x2(d.bmi); })
-    .y0(height2)
-    .y1(function(d) { return y2(d.prob); });
 
 
 
@@ -140,9 +161,6 @@ svg.append("defs").append("clipPath")
     .attr("height", height);
 
 
-
-
-
 var focus = svg.append("g")
     .attr("class", "focus")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -152,37 +170,53 @@ var context = svg.append("g")
     .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
 
 
+pdata = ['prob_now', 'prob_5','prob_15'];
+
+var the_data = []
 
 d3.tsv("data.tsv", function(error, data) {
+  
+  the_data = data;
+
   data.forEach(function(d) {
     d.bmi = +d.bmi;
-    d.prob = +d.prob;
-    d.prob10 = +d.prob*.7;
-    d.prob20 = +d.prob*1.5;
+    d.prob_now = +d.prob;
+    d.prob_5 = +d.prob*.7;
+    d.prob_15 = +d.prob*1.2;
   });
 
-  x.domain(d3.extent(data, function(d) { return d.bmi; }));
-  y.domain(d3.extent(data, function(d) { return d.prob; }));
-  x2.domain(x.domain());
-  y2.domain(y.domain());
+  xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
+  ymain.domain(d3.extent(data, function(d) { return d.prob_15; }));
+  xbrush.domain(xmain.domain());
+  ybrush.domain(ymain.domain());
+
+
+  focus.selectAll('path')
+    .data(pdata)
+  .enter()
+    .append('path')
+    .attr('clip-path', 'url(#clip)')
+    //.attr('fill','none')
+    .attr('d', function (prob_when) {
+      return areaMain(prob_when)(data);
+    })
+    .attr('class', function (prob_when) {
+      return "path_" + prob_when + " focusdata";
+    });
 
 
 
-    focus.append("path")
-      .datum(data)
-      .attr("class", "area")
-      .attr("d", area);
-
-    focus.append("path")
-      .datum(data)
-      .attr("class", "area")
-      .attr("d", area10);
-
-
-     focus.append("path")
-      .datum(data)
-      .attr("class", "area")
-      .attr("d", area20);
+  context.selectAll('path')
+    .data(['prob_now', 'prob_5','prob_15'])
+  .enter()
+    .append('path')
+    .attr('fill','none')
+    .attr('d', function (prob_when) {
+      return areaBrush(prob_when)(data);
+    })
+    .attr('class', function (prob_when) {
+      return "path_" + prob_when;
+    });
 
 
 
@@ -209,13 +243,6 @@ d3.tsv("data.tsv", function(error, data) {
       .style("text-anchor", "end")
       .text("Prob(DM)");
 
-
-  context.append("path")
-      .datum(data)
-      .attr("class", "area")
-      .attr("d", area2);
-
-
   context.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height2 + ")")
@@ -231,62 +258,53 @@ d3.tsv("data.tsv", function(error, data) {
 
 
 
+  // // THIS CODE SHOWS THE VALUES OM THE LINE    
+  // var bisectBMI = d3.bisector(function(d) { return d.bmi; }).left
+  // var formatProb = d3.format(",.2f")
+  // var formatBMI = d3.format(",.1f")
 
 
+  // //var focusMarkers = svg.append("g")
+  // var focusMarkers = focus.append("g")
+  //     .attr("class", "focusMarkers")
+  //     .style("display", "none");
 
+  // focusMarkers.append("circle")
+  //     .attr("r", 6);
 
+  // focusMarkers.append("text")
+  //     .attr("x", 9)
+  //     .attr("dy", ".35em");
 
+  // //svg.append("rect")
+  // focus.append("rect")
+	 //  .attr("class", "overlay")
+	 //  .attr("width", width)
+	 //  .attr("height", height)
+	 //  .on("mouseover", function() { focusMarkers.style("display", null); })
+	 //  .on("mouseout", function() { focusMarkers.style("display", "none"); })
+	 //  .on("mousemove", mousemove);
 
+  // function mousemove() {
+  //   var x0 = xmain.invert(d3.mouse(this)[0]),
+  //       i = bisectBMI(data, x0, 1),
+  //       d0 = data[i - 1],
+  //       d1 = data[i],
+  //       d = x0 - d0.bmi > d1.bmi - x0 ? d1 : d0;
+  //   focusMarkers.attr("transform", "translate(" + xmain(d.bmi) + "," + ymain(d.prob_now) + ")");
+  //   focusMarkers.select("text").text("BMI: " + formatBMI(d.bmi) + " Prob: " + formatProb(d.prob_now));
+  // }
 
-
-
-  // THIS CODE SHOWS THE VALUES OM THE LINE    
-  var bisectBMI = d3.bisector(function(d) { return d.bmi; }).left
-  var formatProb = d3.format(",.2f")
-  var formatBMI = d3.format(",.1f")
-
-
-  //var focusMarkers = svg.append("g")
-  var focusMarkers = focus.append("g")
-      .attr("class", "focusMarkers")
-      .style("display", "none");
-
-  focusMarkers.append("circle")
-      .attr("r", 6);
-
-  focusMarkers.append("text")
-      .attr("x", 9)
-      .attr("dy", ".35em");
-
-  //svg.append("rect")
-  focus.append("rect")
-	  .attr("class", "overlay")
-	  .attr("width", width)
-	  .attr("height", height)
-	  .on("mouseover", function() { focusMarkers.style("display", null); })
-	  .on("mouseout", function() { focusMarkers.style("display", "none"); })
-	  .on("mousemove", mousemove);
-
-  function mousemove() {
-    var x0 = x.invert(d3.mouse(this)[0]),
-        i = bisectBMI(data, x0, 1),
-        d0 = data[i - 1],
-        d1 = data[i],
-        d = x0 - d0.bmi > d1.bmi - x0 ? d1 : d0;
-    focusMarkers.attr("transform", "translate(" + x(d.bmi) + "," + y(d.prob) + ")");
-    focusMarkers.select("text").text("BMI: " + formatBMI(d.bmi) + " Prob: " + formatProb(d.prob));
-  }
 
 
 });
 
 
-  ///this is needed for the brushed part!		
-  function brushed() {
-	  x.domain(brush.empty() ? x2.domain() : brush.extent());
-	  focus.select(".area").attr("d", area);
-	  focus.select(".x.axis").call(xAxis);
-  }
+
+
+
+
+
 
 
 
