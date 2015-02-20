@@ -13,6 +13,7 @@ body {
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
+  stroke-width:4.5px;
 }
 
 div {
@@ -21,8 +22,8 @@ div {
 
 }
 
-
 .ageslider, .genderSlider {
+	font: 24px sans-serif;
 	margin-left:130px;
 	margin-right:150px;
     height: 30px;
@@ -127,7 +128,7 @@ margin-right: 30px;
 	<!--          style="display: inline-block; width: 340px; text-align: right" -->
 	         Age: <span id="nAge-value">…</span><br />
 	  </label>
-	  <input type="range" min="5" max="100" id="nAge">
+	  <input type="range" min="5" max="100" id="nAge" style="margin: 0; width: 250px;">
 	</p>
 
 
@@ -136,12 +137,12 @@ margin-right: 30px;
 	<!--          style="display: inline-block; width: 340px; text-align: right" -->
 	         Gender: <span id="nGender-value">…</span><br />
 	  </label>
-	  <input type="range" min="0" max="1" id="nGender">
+	  <input type="range" min="0" max="1" id="nGender" style="margin: 0; width: 70px;">
 	</p>
 </div>
 
 
-<script src="http://d3js.org/d3.v3.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
 
 
 
@@ -162,7 +163,7 @@ bmi_values =  [10,11,12,13,14,15,16,17,18,18.5,19.0,19.5,20.0,
 				35.5,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,
 				51,52,53,54,55,56,57,58,59,60,61,62,63,64,65]
 
-default_age = 100
+default_age = 30
 default_is_male = 1
 defaultGenderText = "male"
 
@@ -238,7 +239,7 @@ function update(nAge,nGender) {
     xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
 
 
-    
+
   y_axis_range_max_range = d3.extent(data, function(d) { return d.prob_15; });
   y_axis_range_min_range = d3.extent(data, function(d) { return d.prob_now; });
   y_axis_range_max = Math.min(1,y_axis_range_max_range[1]*1.1)
@@ -299,23 +300,23 @@ function brushed() {
 
 
 var areaMain = function (prob_when) {
-	return d3.svg.area()
+	return d3.svg.line()
     	.interpolate("monotone")
     	.x(function(d) { 
     		return xmain(d.bmi); })
-    	.y0(height)
-    	.y1(function(d) { 
+    	//.y0(height)
+    	.y(function(d) { 
     		return ymain(d[prob_when]); 
     });
 };
 
 
 var areaBrush = function (prob_when) {
-	return d3.svg.area()
+	return d3.svg.line()
     	.interpolate("monotone")
     	.x(function(d) { return xbrush(d.bmi); })
-    	.y0(height2)
-    	.y1(function(d) { return ybrush(d[prob_when]); 
+    	//.y0(height2)
+    	.y(function(d) { return ybrush(d[prob_when]); 
     });
 };
 
@@ -368,11 +369,7 @@ svg.append("defs").append("clipPath")
     .attr("height", height);
 
 
-svg.append("defs").append("clipPath")
-    .attr("id", "clip")
-  .append("rect")
-    .attr("width", width)
-    .attr("height", height);
+
 
 //var pdata = ['prob_now', 'prob_5','prob_15'];
     var color_hash = {  0 : ["prob_now", "blue","current risk profile"],
@@ -388,7 +385,7 @@ svg.append("defs").append("clipPath")
         //.attr("y", 50)
 	  .attr("height", 100)
 	  .attr("width", 100)
-    .attr('transform', 'translate(-600,15)')  
+    .attr('transform', 'translate(-630,20)')  
 
 
        legend.selectAll('rect')
@@ -505,7 +502,13 @@ var context = svg.append("g")
   context.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height2 + ")")
-      .call(xAxis2);
+      .call(xAxis2)
+       .append("text")
+    	.attr("class", "x label")
+    	.attr("x", width*.99)
+    	.attr("y", -6)
+    	.style("text-anchor", "end")
+        .text("Body Mass Index (BMI)");
 
   context.append("g")
       .attr("class", "x brush")
@@ -516,43 +519,159 @@ var context = svg.append("g")
 
 
 
-  // THIS CODE SHOWS THE VALUES OM THE LINE    
-  var bisectBMI = d3.bisector(function(d) { return d.bmi; }).left
-  var formatProb = d3.format(",.2f")
-  var formatBMI = d3.format(",.1f")
 
 
-  //var focusMarkers = svg.append("g")
-  var focusMarkers = focus.append("g")
-      .attr("class", "focusMarkers")
-      .style("display", "none");
 
-  focusMarkers.append("circle")
-      .attr("r", 10);
 
-  focusMarkers.append("text")
-      .attr("x", -25)
-      .attr("y",30)
-      .attr("dy", ".35em");
+  // // THIS CODE SHOWS THE VALUES OM THE LINE    
+  // var bisectBMI = d3.bisector(function(d) { return d.bmi; }).left
+  // var formatProb = d3.format(",.2f")
+  // var formatBMI = d3.format(",.1f")
 
-  //svg.append("rect")
-  focus.append("rect")
+
+  // //var focusMarkers = svg.append("g")
+  // var focusMarkers = focus.append("g")
+  //     .attr("class", "focusMarkers")
+  //     .style("display", "none");
+
+  // focusMarkers.append("circle")
+  //     .attr("r", 10);
+
+  // focusMarkers.append("text")
+  //     .attr("x", -25)
+  //     .attr("y",30)
+  //     .attr("dy", ".35em");
+
+  // //svg.append("rect")
+  // focus.append("rect")
+	 //  .attr("class", "overlay")
+	 //  .attr("width", width)
+	 //  .attr("height", height)
+	 //  .on("mouseover", function() { focusMarkers.style("display", null); })
+	 //  .on("mouseout", function() { focusMarkers.style("display", "none"); })
+	 //  .on("mousemove", mousemove);
+
+  // function mousemove() {
+  //   var x0 = xmain.invert(d3.mouse(this)[0]),
+  //       i = bisectBMI(data, x0, 1),
+  //       d0 = data[i - 1],
+  //       d1 = data[i],
+  //       d = x0 - d0.bmi > d1.bmi - x0 ? d1 : d0;
+  //   focusMarkers.attr("transform", "translate(" + xmain(d.bmi) + "," + ymain(d.prob_now) + ")");
+  //   focusMarkers.select("text").text("p: " + formatProb(d.prob_now));
+  // }
+
+
+
+
+
+
+
+
+
+
+  var rect = focus.append("rect")
 	  .attr("class", "overlay")
 	  .attr("width", width)
-	  .attr("height", height)
-	  .on("mouseover", function() { focusMarkers.style("display", null); })
-	  .on("mouseout", function() { focusMarkers.style("display", "none"); })
-	  .on("mousemove", mousemove);
+	  .attr("height", height);
+	  // .on("mouseover", function() { focusMarkers.style("display", null); })
+	  // .on("mouseout", function() { focusMarkers.style("display", "none"); })
+	  // .on("mousemove", mousemove);
 
-  function mousemove() {
-    var x0 = xmain.invert(d3.mouse(this)[0]),
-        i = bisectBMI(data, x0, 1),
-        d0 = data[i - 1],
-        d1 = data[i],
-        d = x0 - d0.bmi > d1.bmi - x0 ? d1 : d0;
-    focusMarkers.attr("transform", "translate(" + xmain(d.bmi) + "," + ymain(d.prob_now) + ")");
-    focusMarkers.select("text").text("p: " + formatProb(d.prob_now));
-  }
+
+	var verticalLine = focus.append('line')
+	// .attr('transform', 'translate(100, 50)')
+	.attr({
+	    'x1': 0,
+	    'y1': 0,
+	    'x2': 0,
+	    'y2': height
+	})
+	    .attr("stroke", "steelblue")
+	    .attr('class', 'verticalLine');
+
+
+
+
+
+ // var focusMarkers = focus.append("g")
+ //      .attr("class", "focusMarkers")
+ //      .style("display", "none");
+
+
+ //  focusMarkers.append("circle")
+ //      .attr("r", 10)
+ //      .attr("opacity", 0)
+	//   .attr({
+	//     r: 6,
+	//     fill: 'darkred'
+	//     });
+
+  // focusMarkers.append("text")
+  //     .attr("x", -25)
+  //     .attr("y",30)
+  //     .attr("dy", ".35em");
+
+
+
+
+	circle = focus.append("circle")
+	    .attr("opacity", 0)
+	    .attr({
+	    r: 6,
+	    fill: 'darkred'
+
+	});
+
+
+
+focus.on('mousemove', function () {
+
+
+	var xPos = d3.mouse(this)[0];
+	//console.log("xPos: ", xPos);
+	d3.select(".verticalLine").attr("transform", function () {
+	    return "translate(" + xPos + ",0)";
+	});
+
+	var pathLength = focus.selectAll("path.focusdata").node().getTotalLength();
+	var x = xPos;
+	var beginning = x,
+	    end = pathLength,
+	    target;
+
+	while (true) {
+
+	    target = Math.floor((beginning + end) / 2);
+
+	    //console.log("target: ", target);
+	    pos = focus.selectAll("path.focusdata").node().getPointAtLength(target);
+	    if ((target === end || target === beginning) && pos.x !== x) {
+	        break;
+	    }
+	    if (pos.x > x) end = target;
+	    else if (pos.x < x) beginning = target;
+	    else break; //position found
+	}
+	//focusMarkers.select("circle").attr("opacity", 1)
+	circle.attr("opacity", 1)
+	    .attr("cx", x)
+	    .attr("cy", pos.y)
+
+
+	//console.log("x and y coordinate where vertical line intersects graph: " + [pos.x, pos.y]);
+	//console.log("data where vertical line intersects graph: " + [xmain.invert(pos.x), ymain.invert(pos.y)]);
+
+
+});
+
+
+
+
+
+
+
+
 
 
 </script>
