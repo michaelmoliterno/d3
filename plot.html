@@ -3,8 +3,12 @@
 <style>
 
 body {
-  font: 15px sans-serif;
+  font: 16px sans-serif;
+  color: black;
+/*  stroke: black;*/
 }
+
+
 
 .axis path,
 .axis line {
@@ -12,6 +16,26 @@ body {
   stroke: #000;
   shape-rendering: crispEdges;
 }
+
+div {
+	margin: auto;
+    padding: 20px 15px;
+
+}
+
+
+.ageslider, .genderSlider {
+	margin-left:130px;
+	margin-right:150px;
+    height: 30px;
+    width: 250px;
+    float: left;
+}
+
+.ageslider {
+margin-right: 30px;
+}
+
 
 .overlay {
   fill: none;
@@ -24,17 +48,44 @@ body {
 }
 
 
-/*.area {
+.y.axis {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis{
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+
+
+.area {
   fill: none;
   opacity: .9;
   clip-path: url(#clip);
-}*/
+}
 
 .line {
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
 }
+
+
+ .legend {
+	            padding: 5px;
+	            font: 15px sans-serif;
+	            background: yellow;
+	            box-shadow: 2px 2px 1px #888;
+
+  }
+
+  rect {
+    stroke-width: 3;
+  }
 
 .brush .extent {
   stroke: #fff;
@@ -45,43 +96,49 @@ body {
 
 .path_prob_now {
 	fill:none;
-    stroke:green;
-    stroke-width:1px;
+    stroke:blue;
+    stroke-width:4.5px;
 }
 .path_prob_5 {
 	fill:none;
-    stroke:red;
-    stroke-width:1px;
+    stroke:cyan;
+    stroke-width:2.5px;
+/*    stroke-dasharray:1,1;*/
 }
 
 .path_prob_15 {
 	fill:none;
-    stroke:blue;
+    stroke:black;
     stroke-width:1px;
+/*    stroke-dasharray:5,5;*/
 }
+
+
+
 
 </style>
 
 
 <body>
 
+<div>
+	<p class="ageslider">
+	  <label for="nAge" >
+	<!--          style="display: inline-block; width: 340px; text-align: right" -->
+	         Age: <span id="nAge-value">…</span><br />
+	  </label>
+	  <input type="range" min="5" max="100" id="nAge">
+	</p>
 
-<p>
-  <label for="nAge" >
-<!--          style="display: inline-block; width: 340px; text-align: right" -->
-         Age = <span id="nAge-value">…</span>
-  </label>
-  <input type="range" min="5" max="100" id="nAge">
-</p>
 
-
-<p>
-  <label for="nGender" >
-<!--          style="display: inline-block; width: 340px; text-align: right" -->
-         Gender = <span id="nGender-value">…</span>
-  </label>
-  <input type="range" min="0" max="1" id="nGender">
-</p>
+	<p class="genderSlider">
+	  <label for="nGender" >
+	<!--          style="display: inline-block; width: 340px; text-align: right" -->
+	         Gender: <span id="nGender-value">…</span><br />
+	  </label>
+	  <input type="range" min="0" max="1" id="nGender">
+	</p>
+</div>
 
 
 <script src="http://d3js.org/d3.v3.js"></script>
@@ -105,7 +162,7 @@ bmi_values =  [10,11,12,13,14,15,16,17,18,18.5,19.0,19.5,20.0,
 				35.5,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,
 				51,52,53,54,55,56,57,58,59,60,61,62,63,64,65]
 
-default_age = 25
+default_age = 30
 default_is_male = 1
 defaultGenderText = "male"
 
@@ -116,16 +173,10 @@ data = [];
 
   d3.select("#nAge-value").text(default_age);
   d3.select("#nAge").property("value", default_age);
-
-
   d3.select("#nGender-value").text(defaultGenderText);
   d3.select("#nGender").property("value", default_is_male);
 
-
-
   data = buildData(default_age,default_is_male);
-
-
 
 
 	function buildData(age,gender) {
@@ -151,9 +202,6 @@ data = [];
 
 
 
-
-
-
 // when the input range changes update the graphs
 d3.select("#nAge").on("input", function() {
 	default_age = +this.value;
@@ -171,7 +219,6 @@ d3.select("#nGender").on("input", function() {
 		defaultGenderText = "female"
 	}
 
-
   	update(default_age,default_is_male);
 });
 
@@ -188,6 +235,15 @@ function update(nAge,nGender) {
   data = buildData(default_age,default_is_male);
 
 
+    xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
+  	y_axis_range = d3.extent(data, function(d) { return d.prob_15; });
+  	y_axis_range[1] = Math.min(1,y_axis_range[1]*1.1)
+  	ymain.domain(y_axis_range);
+  	xbrush.domain(xmain.domain());
+  	ybrush.domain(ymain.domain());
+
+
+
   focus.selectAll("path.focusdata").attr("d", function (prob_when) { 
   	  return areaMain(prob_when)(data);  
   });
@@ -196,27 +252,11 @@ function update(nAge,nGender) {
   	  return areaBrush(prob_when)(data);  
   });
 
-  	xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
-  	y_axis_range = d3.extent(data, function(d) { return d.prob_15; });
-  	ymain.domain(y_axis_range);
-  	xbrush.domain(xmain.domain());
-  	ybrush.domain(ymain.domain());
-	focus.select(".x.axis").call(xAxis);
+  	focus.select(".x.axis").call(xAxis);
+	focus.select(".y.axis").call(yAxis);
 
-	//y axis...
-	//focus.select(".y.axis").call(yAxis);
 
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -237,7 +277,7 @@ function brushed() {
 	if (typeof max === "undefined") {
 		ymain.domain(brush.empty() ? ybrush.domain() : y_axis_range);
 	} else {
-		y_axis_range = [0, max*1.1]
+		y_axis_range = [0, Math.min(max*1.1,1)]
 		ymain.domain(brush.empty() ? ybrush.domain() : y_axis_range);
 	}
 
@@ -277,11 +317,11 @@ var areaBrush = function (prob_when) {
 
 //build our canvas
 
-var margin = {top: 10, right: 60, bottom: 155, left: 40},
-	margin2 = {top: 375, right: 60, bottom: 20, left: 40},
+var margin = {top: 10, right: 60, bottom: 200, left: 50},
+	margin2 = {top: 550, right: 60, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom,
-    height2 = 500 - margin2.top - margin2.bottom;
+    height = 700 - margin.top - margin.bottom,
+    height2 = 700 - margin2.top - margin2.bottom;
 
 
 var xmain = d3.scale.linear().range([0, width]);
@@ -307,6 +347,12 @@ var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom);
 
+
+var legendRectSize = 18;
+var legendSpacing = 4;
+
+
+
 svg.append("defs").append("clipPath")
     .attr("id", "clip")
   .append("rect")
@@ -319,6 +365,53 @@ svg.append("defs").append("clipPath")
   .append("rect")
     .attr("width", width)
     .attr("height", height);
+
+//var pdata = ['prob_now', 'prob_5','prob_15'];
+    var color_hash = {  0 : ["prob_now", "blue","current"],
+					    1 : ["prob_5", "cyan","+5 years"],
+					    2 : ["prob_15", "black","+15 years"]
+					  }                      
+    
+
+	// add legend   
+	var legend = svg.append("g")
+	  .attr("class", "legend")
+        //.attr("x", w - 65)
+        //.attr("y", 50)
+	  .attr("height", 100)
+	  .attr("width", 100)
+    .attr('transform', 'translate(-600,15)')  
+
+
+       legend.selectAll('rect')
+      .data(pdata)
+      .enter()
+      .append("rect")
+	  .attr("x", width-95)
+      .attr("y", function(d, i){ return i *  30;})
+	  .attr("width", 20)
+	  .attr("height", 20)
+	  .style("fill", function(d) { 
+        var color = color_hash[pdata.indexOf(d)][1];
+        return color;
+      })
+
+          legend.selectAll('text')
+      .data(pdata)
+      .enter()
+      .append("text")
+	  .attr("x", width - 65)
+      .attr("y", function(d, i){ return i * 30 + 15;})
+	  .text(function(d) {
+        var text = color_hash[pdata.indexOf(d)][2];
+        return text;
+      });
+
+
+
+
+
+
 
 
 var focus = svg.append("g")
@@ -331,9 +424,9 @@ var context = svg.append("g")
 
 
 
-
   xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
   y_axis_range = d3.extent(data, function(d) { return d.prob_15; });
+  y_axis_range[1] = Math.min(1,y_axis_range[1]*1.1)
   ymain.domain(y_axis_range);
   xbrush.domain(xmain.domain());
   ybrush.domain(ymain.domain());
@@ -376,7 +469,7 @@ var context = svg.append("g")
     	.attr("x", width*.99)
     	.attr("y", -6)
     	.style("text-anchor", "end")
-        .text("BMI");
+        .text("Body Mass Index (BMI)");
 
   focus.append("g")
       .attr("class", "y axis")
@@ -387,12 +480,7 @@ var context = svg.append("g")
       .attr("y", 6)
       .attr("dy", ".75em")
       .style("text-anchor", "end")
-      .text("Prob(DM)");
-
-
-
-
-
+      .text("Probability of having Type 2 Diabetes");
 
 
 
@@ -411,12 +499,6 @@ var context = svg.append("g")
 
 
 
-
-
-
-
-
-
   // THIS CODE SHOWS THE VALUES OM THE LINE    
   var bisectBMI = d3.bisector(function(d) { return d.bmi; }).left
   var formatProb = d3.format(",.2f")
@@ -429,10 +511,10 @@ var context = svg.append("g")
       .style("display", "none");
 
   focusMarkers.append("circle")
-      .attr("r", 6);
+      .attr("r", 10);
 
   focusMarkers.append("text")
-      .attr("x", 9)
+      .attr("x", 20)
       .attr("dy", ".35em");
 
   //svg.append("rect")
@@ -451,7 +533,7 @@ var context = svg.append("g")
         d1 = data[i],
         d = x0 - d0.bmi > d1.bmi - x0 ? d1 : d0;
     focusMarkers.attr("transform", "translate(" + xmain(d.bmi) + "," + ymain(d.prob_now) + ")");
-    focusMarkers.select("text").text("BMI: " + formatBMI(d.bmi) + " Prob: " + formatProb(d.prob_now));
+    focusMarkers.select("text").text("Prob: " + formatProb(d.prob_now));
   }
 
 
