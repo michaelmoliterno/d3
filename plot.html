@@ -24,11 +24,11 @@ body {
 }
 
 
-.area {
+/*.area {
   fill: none;
-  opacity: .2;
+  opacity: .9;
   clip-path: url(#clip);
-}
+}*/
 
 .line {
   fill: none;
@@ -67,23 +67,21 @@ body {
 
 
 <p>
-  <label for="nAge" 
-         style="display: inline-block; width: 340px; text-align: right">
+  <label for="nAge" >
+<!--          style="display: inline-block; width: 340px; text-align: right" -->
          Age = <span id="nAge-value">…</span>
   </label>
   <input type="range" min="5" max="100" id="nAge">
 </p>
 
 
-<!-- <p>
-  <label for="nGender" 
-         style="display: inline-block; width: 340px; text-align: right">
-         Age = <span id="nGender-value">…</span>
+<p>
+  <label for="nGender" >
+<!--          style="display: inline-block; width: 340px; text-align: right" -->
+         Gender = <span id="nGender-value">…</span>
   </label>
-  <input type="radio" name id="nGender">
-</p> -->
-
-
+  <input type="range" min="0" max="1" id="nGender">
+</p>
 
 
 <script src="http://d3js.org/d3.v3.js"></script>
@@ -93,8 +91,6 @@ body {
 <script>
 
 
-
-///default vals and mathssssssss
 
 var intercept = -7.3381
 var bmibeta = .0953
@@ -111,11 +107,22 @@ bmi_values =  [10,11,12,13,14,15,16,17,18,18.5,19.0,19.5,20.0,
 
 default_age = 25
 default_is_male = 1
+defaultGenderText = "male"
+
+
+
 
 data = [];
 
   d3.select("#nAge-value").text(default_age);
   d3.select("#nAge").property("value", default_age);
+
+
+  d3.select("#nGender-value").text(defaultGenderText);
+  d3.select("#nGender").property("value", default_is_male);
+
+
+
   data = buildData(default_age,default_is_male);
 
 
@@ -124,10 +131,6 @@ data = [];
 	function buildData(age,gender) {
 		data = []
 		bmi_values.forEach(function(element) {
-
-			// var bmi_calc = element[0]
-			// var age_calc = element[1]
-			// var is_male_calc = element[2]
 
 			var prob_now_calc = 1/(1 + Math.exp(-(intercept+bmibeta*element+agebeta*age+malebeta*gender)))
 			var prob_5_calc = 1/(1 + Math.exp(-(intercept+bmibeta*element+agebeta*(age+5)+malebeta*gender)))
@@ -158,15 +161,51 @@ d3.select("#nAge").on("input", function() {
 });
 
 
+// when the input range changes update the graphs
+d3.select("#nGender").on("input", function() {
+	default_is_male = +this.value;
+
+	if (default_is_male == 1) {
+		defaultGenderText = "male"
+	} else {
+		defaultGenderText = "female"
+	}
+
+
+  	update(default_age,default_is_male);
+});
+
+
 // update the elements
 function update(nAge,nGender) {
   // adjust the text on the range slider
   d3.select("#nAge-value").text(nAge);
   d3.select("#nAge").property("value", nAge);
 
+  d3.select("#nGender-value").text(defaultGenderText);
+  d3.select("#nGender").property("value", default_is_male);
+
+  data = buildData(default_age,default_is_male);
 
 
-  
+  focus.selectAll("path.focusdata").attr("d", function (prob_when) { 
+  	  return areaMain(prob_when)(data);  
+  });
+
+  context.selectAll("path.contextdata").attr("d", function (prob_when) { 
+  	  return areaBrush(prob_when)(data);  
+  });
+
+  	xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
+  	y_axis_range = d3.extent(data, function(d) { return d.prob_15; });
+  	ymain.domain(y_axis_range);
+  	xbrush.domain(xmain.domain());
+  	ybrush.domain(ymain.domain());
+	focus.select(".x.axis").call(xAxis);
+
+	//y axis...
+	//focus.select(".y.axis").call(yAxis);
+
 }
 
 
@@ -238,8 +277,8 @@ var areaBrush = function (prob_when) {
 
 //build our canvas
 
-var margin = {top: 10, right: 10, bottom: 100, left: 40},
-	margin2 = {top: 430, right: 10, bottom: 20, left: 40},
+var margin = {top: 10, right: 60, bottom: 155, left: 40},
+	margin2 = {top: 375, right: 60, bottom: 20, left: 40},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom,
     height2 = 500 - margin2.top - margin2.bottom;
@@ -275,6 +314,13 @@ svg.append("defs").append("clipPath")
     .attr("height", height);
 
 
+svg.append("defs").append("clipPath")
+    .attr("id", "clip")
+  .append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+
 var focus = svg.append("g")
     .attr("class", "focus")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -282,6 +328,8 @@ var focus = svg.append("g")
 var context = svg.append("g")
     .attr("class", "context")
     .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+
 
 
   xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
@@ -302,6 +350,21 @@ var context = svg.append("g")
     .attr('class', function (prob_when) {
       return "path_" + prob_when + " focusdata";
     });
+
+  context.selectAll('path')
+    .data(pdata)
+  .enter()
+    .append('path')
+    .attr('clip-path', 'url(#clip)')
+    .attr('fill','none')
+    .attr('d', function (prob_when) {
+      return areaBrush(prob_when)(data);
+    })
+    .attr('class', function (prob_when) {
+      return "path_" + prob_when + " contextdata";
+    });
+
+
 
 
   focus.append("g")
@@ -330,17 +393,7 @@ var context = svg.append("g")
 
 
 
-  context.selectAll('path')
-    .data(pdata)
-  .enter()
-    .append('path')
-    .attr('fill','none')
-    .attr('d', function (prob_when) {
-      return areaBrush(prob_when)(data);
-    })
-    .attr('class', function (prob_when) {
-      return "path_" + prob_when;
-    });
+
 
 
 
@@ -355,11 +408,6 @@ var context = svg.append("g")
     .selectAll("rect")
       .attr("y", -6)
       .attr("height", height2);
-
-
-
-
-
 
 
 
