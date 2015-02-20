@@ -46,95 +46,168 @@ body {
 .path_prob_now {
 	fill:none;
     stroke:green;
-    stroke-width:3px;
+    stroke-width:1px;
 }
 .path_prob_5 {
 	fill:none;
     stroke:red;
-    stroke-width:3px;
+    stroke-width:1px;
 }
 
 .path_prob_15 {
 	fill:none;
     stroke:blue;
-    stroke-width:3px;
+    stroke-width:1px;
 }
 
 </style>
 
 
 <body>
+
+
+<p>
+  <label for="nAge" 
+         style="display: inline-block; width: 340px; text-align: right">
+         Age = <span id="nAge-value">…</span>
+  </label>
+  <input type="range" min="5" max="100" id="nAge">
+</p>
+
+
+<!-- <p>
+  <label for="nGender" 
+         style="display: inline-block; width: 340px; text-align: right">
+         Age = <span id="nGender-value">…</span>
+  </label>
+  <input type="radio" name id="nGender">
+</p> -->
+
+
+
+
 <script src="http://d3js.org/d3.v3.js"></script>
 
 
 
 <script>
 
-var margin = {top: 10, right: 10, bottom: 100, left: 40},
-	margin2 = {top: 430, right: 10, bottom: 20, left: 40},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom,
-    height2 = 500 - margin2.top - margin2.bottom;
 
 
-var xmain = d3.scale.linear().range([0, width]);
-var	xbrush = d3.scale.linear().range([0, width]);
+///default vals and mathssssssss
 
-var ymain = d3.scale.linear().range([height, 0]);
-var	ybrush = d3.scale.linear().range([height2, 0]);
+var intercept = -7.3381
+var bmibeta = .0953
+var agebeta = .0491
+var malebeta = .3775
+var pdata = ['prob_now', 'prob_5','prob_15'];
 
-var xAxis = d3.svg.axis().scale(xmain).orient("bottom");
-var	xAxis2 = d3.svg.axis().scale(xbrush).orient("bottom");
+bmi_values =  [10,11,12,13,14,15,16,17,18,18.5,19.0,19.5,20.0,
+				20.5,21.0,21.5,22.0,22.5,23.0,23.5,24.0,24.5,25.0,
+				25.5,26.0,26.5,27.0,27.5,28.0,28.5,29.0,29.5,30.0,
+				30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.0,
+				35.5,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,
+				51,52,53,54,55,56,57,58,59,60,61,62,63,64,65]
 
-var yAxis = d3.svg.axis()
-    .scale(ymain)
-    .orient("left");
+default_age = 25
+default_is_male = 1
 
-var brush = d3.svg.brush()
-    .x(xbrush)
-    //.y(ybrush)
-    .on("brush", brushed);
+data = [];
 
-      ///this is needed for the brushed part!		
-function brushed() {
-  xmain.domain(brush.empty() ? xbrush.domain() : brush.extent());
+  d3.select("#nAge-value").text(default_age);
+  d3.select("#nAge").property("value", default_age);
+  data = buildData(default_age,default_is_male);
 
 
-  // console.log(xmain.domain()[0]);
-  // console.log(xmain.domain()[1]);
-  // data.forEach()
 
-  var dataFiltered = data.filter(function(d, i) {
-    if ( (d.bmi>= xmain.domain()[0]) && (d.bmi <= xmain.domain()[1]) ) {
-      return d.prob_15;
-    }
-  })
+
+	function buildData(age,gender) {
+		data = []
+		bmi_values.forEach(function(element) {
+
+			// var bmi_calc = element[0]
+			// var age_calc = element[1]
+			// var is_male_calc = element[2]
+
+			var prob_now_calc = 1/(1 + Math.exp(-(intercept+bmibeta*element+agebeta*age+malebeta*gender)))
+			var prob_5_calc = 1/(1 + Math.exp(-(intercept+bmibeta*element+agebeta*(age+5)+malebeta*gender)))
+			var prob_15_calc = 1/(1 + Math.exp(-(intercept+bmibeta*element+agebeta*(age+15)+malebeta*gender)))
+
+			var bmi_value_object = {'bmi':element,
+								'prob_now':prob_now_calc,
+								'prob_5':prob_5_calc,
+								'prob_15':prob_15_calc};
+
+			data.push(bmi_value_object);
+
+		});
+
+		return data;
+
+	};
+
+
+
+
+
+
+// when the input range changes update the graphs
+d3.select("#nAge").on("input", function() {
+	default_age = +this.value;
+  	update(default_age,default_is_male);
+});
+
+
+// update the elements
+function update(nAge,nGender) {
+  // adjust the text on the range slider
+  d3.select("#nAge-value").text(nAge);
+  d3.select("#nAge").property("value", nAge);
+
+
+
   
+}
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+// svg helpers
+function brushed() {
+	xmain.domain(brush.empty() ? xbrush.domain() : brush.extent());
+
+	var dataFiltered = data.filter(function(d, i) {
+		if ( (d.bmi>= xmain.domain()[0]) && (d.bmi <= xmain.domain()[1]) ) {
+	    	return d.prob_15;
+	    }
+	})
+	  
 	var max = d3.max(dataFiltered.map(function(d) { return d.prob_15; }));
-	console.log(max);
 
 	if (typeof max === "undefined") {
-    	ymain.domain(brush.empty() ? ybrush.domain() : y_axis_range);
+		ymain.domain(brush.empty() ? ybrush.domain() : y_axis_range);
 	} else {
 		y_axis_range = [0, max*1.1]
 		ymain.domain(brush.empty() ? ybrush.domain() : y_axis_range);
 	}
 
+	focus.selectAll("path.focusdata").attr("d", function (prob_when) { 
+		return areaMain(prob_when)(data); 
+	});
 
-  	
-  	
-
-
-
-
-  focus.selectAll("path.focusdata").attr("d", function (prob_when) { 
-      	return areaMain(prob_when)(data); 
-    });
-
-  focus.select(".x.axis").call(xAxis);
-  focus.select(".y.axis").call(yAxis);
+	focus.select(".x.axis").call(xAxis);
+	focus.select(".y.axis").call(yAxis);
 }
 
 
@@ -163,11 +236,37 @@ var areaBrush = function (prob_when) {
 
 
 
+//build our canvas
+
+var margin = {top: 10, right: 10, bottom: 100, left: 40},
+	margin2 = {top: 430, right: 10, bottom: 20, left: 40},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom,
+    height2 = 500 - margin2.top - margin2.bottom;
+
+
+var xmain = d3.scale.linear().range([0, width]);
+var	xbrush = d3.scale.linear().range([0, width]);
+
+var ymain = d3.scale.linear().range([height, 0]);
+var	ybrush = d3.scale.linear().range([height2, 0]);
+
+var xAxis = d3.svg.axis().scale(xmain).orient("bottom");
+var	xAxis2 = d3.svg.axis().scale(xbrush).orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(ymain)
+    .orient("left");
+
+var brush = d3.svg.brush()
+    .x(xbrush)
+
+    .on("brush", brushed);
+
+
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom);
-
-
 
 svg.append("defs").append("clipPath")
     .attr("id", "clip")
@@ -185,73 +284,6 @@ var context = svg.append("g")
     .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
 
 
-
-
-
-var intercept = -7.3381
-var bmibeta = .0953
-var agebeta = .0491
-var malebeta = .3775
-var pdata = ['prob_now', 'prob_5','prob_15'];
-
-initial_values = [	
-					[10,25,1],[12,25,1],[14,25,1],[16,25,1],[17,25,1],[18,25,1],[19,25,1],
-					[20,25,1],[20.5,25,1],[21,25,1],[21.5,25,1],[22,25,1],[22.5,25,1],[23,25,1],
-					[23.5,25,1],[24,25,1],[24.5,25,1],[25,25,1],[25.5,25,1],[26,25,1],[26.5,25,1],
-					[27,25,1],[27.5,25,1],[28,25,1],[28.5,25,1],[29,25,1],[29.5,25,1],[30,25,1],
-					[31,25,1],[32,25,1],[33,25,1],[34,25,1],[35,25,1],[36,25,1],[38,25,1],
-					[40,25,1],[42,25,1],[44,25,1],[46,25,1],[49,25,1],[52,25,1],[55,25,1],
-					[58,25,1],[61,25,1],[64,25,1]
-				
-				]
-
-// probas_prob_now = []
-// probas_prob_5 = []
-// probas_prob_15 = []
-data = []
-
-
-initial_values.forEach(function(element) {
-
-	var bmi_calc = element[0]
-	var age_calc = element[1]
-	var is_male_calc = element[2]
-
-	var prob_now_calc = 1/(1 + Math.exp(-(intercept+bmibeta*bmi_calc+agebeta*age_calc+malebeta*is_male_calc)))
-	var prob_5_calc = 1/(1 + Math.exp(-(intercept+bmibeta*bmi_calc+agebeta*(age_calc+5)+malebeta*is_male_calc)))
-	var prob_15_calc = 1/(1 + Math.exp(-(intercept+bmibeta*bmi_calc+agebeta*(age_calc+15)+malebeta*is_male_calc)))
-
-	var bmi_value_object = {'bmi':bmi_calc,
-						'prob_now':prob_now_calc,
-						'prob_5':prob_5_calc,
-						'prob_15':prob_15_calc};
-
-	data.push(bmi_value_object);
-
-
-	// probas_prob_now.push([bmi_calc,prob_now_calc])
-	// probas_prob_5.push([bmi_calc,prob_5_calc])
-	// probas_prob_15.push([bmi_calc,prob_15_calc])
-
-});
-
-
-// console.log(probas_prob_now[15][1])
-// console.log(probas_prob_5[15][1])
-// console.log(probas_prob_15[15][1])
-
-//d3.tsv("data.tsv", function(error, data) {
-  
-  
-  // data.forEach(function(d) {
-  //   d.bmi = +d.bmi;
-  //   d.prob_now = +d.prob_now;
-  //   d.prob_5 = +d.prob_5;
-  //   d.prob_15 = +d.prob_15;
-  // });
-
-
-  //
   xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
   y_axis_range = d3.extent(data, function(d) { return d.prob_15; });
   ymain.domain(y_axis_range);
@@ -264,30 +296,12 @@ initial_values.forEach(function(element) {
   .enter()
     .append('path')
     .attr('clip-path', 'url(#clip)')
-    //.attr('fill','none')
     .attr('d', function (prob_when) {
-    	//console.log('data', data);
       return areaMain(prob_when)(data);
     })
     .attr('class', function (prob_when) {
       return "path_" + prob_when + " focusdata";
     });
-
-
-
-  context.selectAll('path')
-    .data(pdata)
-  .enter()
-    .append('path')
-    .attr('fill','none')
-    .attr('d', function (prob_when) {
-      return areaBrush(prob_when)(data);
-    })
-    .attr('class', function (prob_when) {
-      return "path_" + prob_when;
-    });
-
-
 
 
   focus.append("g")
@@ -312,6 +326,24 @@ initial_values.forEach(function(element) {
       .style("text-anchor", "end")
       .text("Prob(DM)");
 
+
+
+
+
+  context.selectAll('path')
+    .data(pdata)
+  .enter()
+    .append('path')
+    .attr('fill','none')
+    .attr('d', function (prob_when) {
+      return areaBrush(prob_when)(data);
+    })
+    .attr('class', function (prob_when) {
+      return "path_" + prob_when;
+    });
+
+
+
   context.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height2 + ")")
@@ -322,7 +354,17 @@ initial_values.forEach(function(element) {
       .call(brush)
     .selectAll("rect")
       .attr("y", -6)
-      .attr("height", height2*10);
+      .attr("height", height2);
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -363,19 +405,6 @@ initial_values.forEach(function(element) {
     focusMarkers.attr("transform", "translate(" + xmain(d.bmi) + "," + ymain(d.prob_now) + ")");
     focusMarkers.select("text").text("BMI: " + formatBMI(d.bmi) + " Prob: " + formatProb(d.prob_now));
   }
-
-
-
-//});
-
-
-
-
-
-
-
-
-
 
 
 </script>
