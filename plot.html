@@ -3,12 +3,10 @@
 <style>
 
 body {
-  font: 16px sans-serif;
+  font: 18px sans-serif;
   color: black;
 /*  stroke: black;*/
 }
-
-
 
 .axis path,
 .axis line {
@@ -30,6 +28,8 @@ div {
     height: 30px;
     width: 250px;
     float: left;
+    text-align: center;
+    font-weight: bold;
 }
 
 .ageslider {
@@ -48,7 +48,7 @@ margin-right: 30px;
 }
 
 
-.y.axis {
+/*.y.axis {
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
@@ -58,11 +58,11 @@ margin-right: 30px;
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
-}
+}*/
 
 
 
-.area {
+/*.area {
   fill: none;
   opacity: .9;
   clip-path: url(#clip);
@@ -72,20 +72,20 @@ margin-right: 30px;
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
-}
+}*/
 
 
  .legend {
 	            padding: 5px;
-	            font: 15px sans-serif;
+	            font: 18px sans-serif;
 	            background: yellow;
 	            box-shadow: 2px 2px 1px #888;
 
   }
 
-  rect {
+/*  rect {
     stroke-width: 3;
-  }
+  }*/
 
 .brush .extent {
   stroke: #fff;
@@ -162,7 +162,7 @@ bmi_values =  [10,11,12,13,14,15,16,17,18,18.5,19.0,19.5,20.0,
 				35.5,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,
 				51,52,53,54,55,56,57,58,59,60,61,62,63,64,65]
 
-default_age = 30
+default_age = 100
 default_is_male = 1
 defaultGenderText = "male"
 
@@ -236,9 +236,17 @@ function update(nAge,nGender) {
 
 
     xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
-  	y_axis_range = d3.extent(data, function(d) { return d.prob_15; });
-  	y_axis_range[1] = Math.min(1,y_axis_range[1]*1.1)
-  	ymain.domain(y_axis_range);
+
+
+    
+  y_axis_range_max_range = d3.extent(data, function(d) { return d.prob_15; });
+  y_axis_range_min_range = d3.extent(data, function(d) { return d.prob_now; });
+  y_axis_range_max = Math.min(1,y_axis_range_max_range[1]*1.1)
+  y_axis_range_min = y_axis_range_min_range[0]*.8
+  ymain.domain([y_axis_range_min,y_axis_range_max]);
+
+
+
   	xbrush.domain(xmain.domain());
   	ybrush.domain(ymain.domain());
 
@@ -318,7 +326,7 @@ var areaBrush = function (prob_when) {
 //build our canvas
 
 var margin = {top: 10, right: 60, bottom: 200, left: 50},
-	margin2 = {top: 550, right: 60, bottom: 30, left: 50},
+	margin2 = {top: 520, right: 60, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
     height = 700 - margin.top - margin.bottom,
     height2 = 700 - margin2.top - margin2.bottom;
@@ -367,9 +375,9 @@ svg.append("defs").append("clipPath")
     .attr("height", height);
 
 //var pdata = ['prob_now', 'prob_5','prob_15'];
-    var color_hash = {  0 : ["prob_now", "blue","current"],
-					    1 : ["prob_5", "cyan","+5 years"],
-					    2 : ["prob_15", "black","+15 years"]
+    var color_hash = {  0 : ["prob_now", "blue","current risk profile"],
+					    1 : ["prob_5", "cyan","risk profile in 5 years"],
+					    2 : ["prob_15", "black","risk profile in 15 years"]
 					  }                      
     
 
@@ -425,9 +433,18 @@ var context = svg.append("g")
 
 
   xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
-  y_axis_range = d3.extent(data, function(d) { return d.prob_15; });
-  y_axis_range[1] = Math.min(1,y_axis_range[1]*1.1)
-  ymain.domain(y_axis_range);
+
+
+  y_axis_range_max_range = d3.extent(data, function(d) { return d.prob_15; });
+  y_axis_range_min_range = d3.extent(data, function(d) { return d.prob_now; });
+  y_axis_range_max = Math.min(1,y_axis_range_max_range[1]*1.1)
+  y_axis_range_min = y_axis_range_min_range[0]*.8
+  ymain.domain([y_axis_range_min,y_axis_range_max]);
+
+
+
+
+
   xbrush.domain(xmain.domain());
   ybrush.domain(ymain.domain());
 
@@ -494,8 +511,8 @@ var context = svg.append("g")
       .attr("class", "x brush")
       .call(brush)
     .selectAll("rect")
-      .attr("y", -6)
-      .attr("height", height2);
+      .attr("y", 15)
+      .attr("height", height2-25);
 
 
 
@@ -514,7 +531,8 @@ var context = svg.append("g")
       .attr("r", 10);
 
   focusMarkers.append("text")
-      .attr("x", 20)
+      .attr("x", -25)
+      .attr("y",30)
       .attr("dy", ".35em");
 
   //svg.append("rect")
@@ -533,7 +551,7 @@ var context = svg.append("g")
         d1 = data[i],
         d = x0 - d0.bmi > d1.bmi - x0 ? d1 : d0;
     focusMarkers.attr("transform", "translate(" + xmain(d.bmi) + "," + ymain(d.prob_now) + ")");
-    focusMarkers.select("text").text("Prob: " + formatProb(d.prob_now));
+    focusMarkers.select("text").text("p: " + formatProb(d.prob_now));
   }
 
 
