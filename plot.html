@@ -22,7 +22,7 @@ div {
 
 }
 
-.ageslider, .genderSlider {
+.ageslider, .genderButtons {
 	font: 24px sans-serif;
 	margin-left:130px;
 	margin-right:150px;
@@ -130,14 +130,28 @@ margin-right: 30px;
 	  <input type="range" min="5" max="100" id="nAge" style="width: 250px;">
 	</p>
 
+<div id="gender-controls">
+	<p class="genderButtons">
+<!-- 	  <label for="nGender" >
 
-	<p class="genderSlider">
-	  <label for="nGender" >
-	<!--          style="display: inline-block; width: 340px; text-align: right" -->
+	         style="display: inline-block; width: 340px; text-align: right"
+
 	         Gender: <span id="nGender-value">…</span><br />
-	  </label>
-	  <input type="range" min="0" max="1" id="nGender" style="width: 70px;">
+	  </label> -->
+
+<!-- 	  <input type="range" min="0" max="1" id="nGender" style="width: 70px;"> -->
+    
+      <input type="radio" name="gender" value="1" checked id="nGender-male" style="width: 70px;">
+      <label for="nGender-male" >Male</label>
+
+
+      <input type="radio" name="gender" value="0" id="nGender-female" style="width: 70px;">
+      <label for="nGender-female" >Female</label>
+    
+
+
 	</p>
+  </div>
 </div>
 
 
@@ -209,18 +223,38 @@ d3.select("#nAge").on("input", function() {
 });
 
 
-// when the input range changes update the graphs
-d3.select("#nGender").on("input", function() {
-	default_is_male = +this.value;
+// // when the input range changes update the graphs
+// d3.select("#nGender").on("input", function() {
+// 	default_is_male = +this.value;
 
-	if (default_is_male == 1) {
-		defaultGenderText = "male"
-	} else {
-		defaultGenderText = "female"
-	}
+// 	if (default_is_male == 1) {
+// 		defaultGenderText = "male"
+// 	} else {
+// 		defaultGenderText = "female"
+// 	}
 
-  	update(default_age,default_is_male);
-});
+//   	update(default_age,default_is_male);
+// });
+
+
+
+  // Enable mode buttons.
+  d3.selectAll("#gender-controls input[name=gender]").on("change", function() {
+      default_is_male = +this.value;  
+      if (default_is_male == 1) {
+        defaultGenderText = "male"
+      } else {
+        defaultGenderText = "female"
+      }
+
+   update(default_age,default_is_male);
+
+
+
+
+  });
+
+
 
 
 // update the elements
