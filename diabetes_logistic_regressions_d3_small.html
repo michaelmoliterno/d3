@@ -25,7 +25,7 @@
 
     .ageslider, .genderButtons {
     font: 20px sans-serif;
-    margin-left: 20%;
+    margin-left: 15%;
     height: 15px;
     float: left;
     text-align: center;
@@ -33,7 +33,7 @@
     }
 
      .ageslider {
-        margin-right: 10%;
+        margin-right: 3%;
 
      }
 
@@ -93,21 +93,24 @@
 </head>
 
 <body>
-    <div>
-        <p class="ageslider"><label for="nAge">
-        <!--          style="display: inline-block; width: 340px; text-align: right" -->
-         Age: <span id="nAge-value">…</span><br></label> <input id="nAge" max=
-        "100" min="5" style="width: 100px;" type="range"></p>
 
+    <div>
+
+        <p class="ageslider">
+          <label for="nAge">Age: <span id="nAge-value">…</span><br></label>
+          <input id="nAge" max="100" min="5" style="width: 140px;" type="range">
+        </p>
 
         <div id="gender-controls">
-            <p class="genderButtons"><input checked id="nGender-male" name=
-            "gender" style="width: 15px;" type="radio" value="1" align="left"> <label for=
-            "nGender-male">Male</label> <input id="nGender-female" name=
-            "gender" style="width: 15px;" type="radio" value="0" align="right"> <label for=
-            "nGender-female">Female</label></p>
-        </div>
+            <p class="genderButtons">
+              <input checked id="nGender-male" name="gender" style="width: 15px;" type="radio" value="1" align="left"> 
+              <label for="nGender-male">Male</label> 
+              <input id="nGender-female" name="gender" style="width: 15px; margin-left:30px;" type="radio" value="0" align="right"> 
+              <label for="nGender-female">Female</label>
+            </p>
+      </div>
     </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script> <script>
 
     var intercept = -7.3381
