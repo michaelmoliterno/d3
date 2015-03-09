@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+
+    body {
+    font: 18px sans-serif;
+    color: black;
+    }
+
+    .axis path,
+    .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+    stroke-width:4.5px;
+    }
+
+    div {
+    margin: auto;
+    padding: 20px 15px;
+
+    }
+
+    .ageslider, .genderButtons {
+    font: 20px sans-serif;
+    margin-left:130px;
+    margin-right:150px;
+    height: 30px;
+    float: left;
+    text-align: center;
+    font-weight: bold;
+    }
+
+    .ageslider {
+    margin-right: 30px;
+    }
+
+
+    .overlay {
+    fill: none;
+    pointer-events: all;
+    }
+
+    .focusMarkers circle {
+    fill: none;
+    stroke: steelblue;
+    }
+
+
+    .legend {
+    padding: 5px;
+    font: 20px sans-serif;
+    background: yellow;
+    box-shadow: 2px 2px 1px #888;
+    }
+
+
+    .brush .extent {
+    stroke: #fff;
+    fill-opacity: .125;
+    shape-rendering: crispEdges;
+    }
+
+
+    .path_prob_now {
+    fill:none;
+    stroke:blue;
+    stroke-width:4.5px;
+    }
+
+    .path_prob_5 {
+    fill:none;
+    stroke:cyan;
+    stroke-width:2.5px;
+    }
+
+    .path_prob_15 {
+    fill:none;
+    stroke:black;
+    stroke-width:1px;
+    }
+    </style>
+
+    <title>
+    </title>
+</head>
+
+<body>
+    <div>
+        <p class="ageslider"><label for="nAge">
+        <!--          style="display: inline-block; width: 340px; text-align: right" -->
+         Age: <span id="nAge-value">…</span><br></label> <input id="nAge" max=
+        "100" min="5" style="width: 250px;" type="range"></p>
+
+
+        <div id="gender-controls">
+            <p class="genderButtons"><input checked id="nGender-male" name=
+            "gender" style="width: 70px;" type="radio" value="1"> <label for=
+            "nGender-male">Male</label> <input id="nGender-female" name=
+            "gender" style="width: 70px;" type="radio" value="0"> <label for=
+            "nGender-female">Female</label></p>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script> <script>
+
+    var intercept = -7.3381
+    var bmibeta = .0953
+    var agebeta = .0491
+    var malebeta = .3775
+    var pdata = ['prob_now', 'prob_5','prob_15'];
+
+    bmi_values =  [10,11,12,13,14,15,16,17,18,18.5,19.0,19.5,20.0,
+                20.5,21.0,21.5,22.0,22.5,23.0,23.5,24.0,24.5,25.0,
+                25.5,26.0,26.5,27.0,27.5,28.0,28.5,29.0,29.5,30.0,
+                30.5,31.0,31.5,32.0,32.5,33.0,33.5,34.0,34.5,35.0,
+                35.5,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,
+                51,52,53,54,55,56,57,58,59,60,61,62,63,64,65]
+
+    default_age = 30
+    default_is_male = 1
+    defaultGenderText = "male"
+
+    data = [];
+
+    d3.select("#nAge-value").text(default_age);
+    d3.select("#nAge").property("value", default_age);
+    d3.select("#nGender-value").text(defaultGenderText);
+    d3.select("#nGender").property("value", default_is_male);
+
+    data = buildData(default_age,default_is_male);
+
+    function buildData(age,gender) {
+        data = []
+        bmi_values.forEach(function(element) {
+
+            var prob_now_calc = 1/(1 + Math.exp(-(intercept+bmibeta*element+agebeta*age+malebeta*gender)))
+            var prob_5_calc = 1/(1 + Math.exp(-(intercept+bmibeta*element+agebeta*(age+5)+malebeta*gender)))
+            var prob_15_calc = 1/(1 + Math.exp(-(intercept+bmibeta*element+agebeta*(age+15)+malebeta*gender)))
+
+            var bmi_value_object = {'bmi':element,
+                                'prob_now':prob_now_calc,
+                                'prob_5':prob_5_calc,
+                                'prob_15':prob_15_calc};
+
+            data.push(bmi_value_object);
+
+        });
+        return data;
+    };
+
+    // when the input range changes update the graphs
+    d3.select("#nAge").on("input", function() {
+    default_age = +this.value;
+    update(default_age,default_is_male);
+    });
+
+    // Enable mode buttons.
+    d3.selectAll("#gender-controls input[name=gender]").on("change", function() {
+      default_is_male = +this.value;  
+      if (default_is_male == 1) {
+        defaultGenderText = "male"
+      } else {
+        defaultGenderText = "female"
+      }
+
+    update(default_age,default_is_male);
+    });
+
+    // update the elements
+    function update(nAge,nGender) {
+    // adjust the text on the range slider
+    d3.select("#nAge-value").text(nAge);
+    d3.select("#nAge").property("value", nAge);
+
+    d3.select("#nGender-value").text(defaultGenderText);
+    d3.select("#nGender").property("value", default_is_male);
+
+    data = buildData(default_age,default_is_male);
+
+    xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
+
+    y_axis_range_max_range = d3.extent(data, function(d) { return d.prob_15; });
+    y_axis_range_min_range = d3.extent(data, function(d) { return d.prob_now; });
+    y_axis_range_max = Math.min(1,y_axis_range_max_range[1]*1.1)
+    y_axis_range_min = y_axis_range_min_range[0]*.8
+    ymain.domain([y_axis_range_min,y_axis_range_max]);
+
+    xbrush.domain(xmain.domain());
+    ybrush.domain(ymain.domain());
+
+    focus.selectAll("path.focusdata").attr("d", function (prob_when) { 
+      return areaMain(prob_when)(data);  
+    });
+
+    context.selectAll("path.contextdata").attr("d", function (prob_when) { 
+      return areaBrush(prob_when)(data);  
+    });
+
+    focus.select(".x.axis").call(xAxis);
+    focus.select(".y.axis").call(yAxis);
+
+    }
+
+    // svg helpers
+    function brushed() {
+    xmain.domain(brush.empty() ? xbrush.domain() : brush.extent());
+
+    var dataFiltered = data.filter(function(d, i) {
+        if ( (d.bmi>= xmain.domain()[0]) && (d.bmi <= xmain.domain()[1]) ) {
+            return d.prob_15;
+        }
+    })
+      
+    var max = d3.max(dataFiltered.map(function(d) { return d.prob_15; }));
+
+    if (typeof max === "undefined") {
+        ymain.domain(brush.empty() ? ybrush.domain() : y_axis_range);
+    } else {
+        y_axis_range = [0, Math.min(max*1.1,1)]
+        ymain.domain(brush.empty() ? ybrush.domain() : y_axis_range);
+    }
+
+    focus.selectAll("path.focusdata").attr("d", function (prob_when) { 
+        return areaMain(prob_when)(data); 
+    });
+
+    focus.select(".x.axis").call(xAxis);
+    focus.select(".y.axis").call(yAxis);
+    }
+
+
+    var areaMain = function (prob_when) {
+    return d3.svg.line()
+        .interpolate("monotone")
+        .x(function(d) { 
+            return xmain(d.bmi); })
+
+        .y(function(d) { 
+            return ymain(d[prob_when]); 
+    });
+    };
+
+
+    var areaBrush = function (prob_when) {
+    return d3.svg.line()
+        .interpolate("monotone")
+        .x(function(d) { return xbrush(d.bmi); })
+
+        .y(function(d) { return ybrush(d[prob_when]); 
+    });
+    };
+
+
+
+    //build our canvas
+
+    var margin = {top: 10, right: 60, bottom: 120, left: 50},
+    margin2 = {top: 450, right: 60, bottom: 30, left: 50},
+    width = 900 - margin.left - margin.right,
+    height = 550 - margin.top - margin.bottom,
+    height2 = 550 - margin2.top - margin2.bottom;
+
+
+    var xmain = d3.scale.linear().range([0, width]);
+    var xbrush = d3.scale.linear().range([0, width]);
+
+    var ymain = d3.scale.linear().range([height, 0]);
+    var ybrush = d3.scale.linear().range([height2, 0]);
+
+    var xAxis = d3.svg.axis().scale(xmain).orient("bottom");
+    var xAxis2 = d3.svg.axis().scale(xbrush).orient("bottom");
+
+    var yAxis = d3.svg.axis()
+    .scale(ymain)
+    .orient("left");
+
+    var brush = d3.svg.brush()
+    .x(xbrush)
+
+    .on("brush", brushed);
+
+
+    var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+
+    var legendRectSize = 18;
+    var legendSpacing = 4;
+
+
+
+    svg.append("defs").append("clipPath")
+    .attr("id", "clip")
+    .append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+
+
+
+    var color_hash = {  0 : ["prob_now", "blue","current risk profile"],
+                        1 : ["prob_5", "cyan","risk profile in 5 years"],
+                        2 : ["prob_15", "black","risk profile in 15 years"]
+                      }                      
+
+
+    // add legend   
+    var legend = svg.append("g")
+      .attr("class", "legend")
+      .attr("height", 100)
+      .attr("width", 100)
+      .attr('transform', 'translate(-630,20)')  
+
+
+       legend.selectAll('rect')
+      .data(pdata)
+      .enter()
+      .append("rect")
+      .attr("x", width-55)
+      .attr("y", function(d, i){ return i *  30;})
+      .attr("width", 20)
+      .attr("height", 20)
+      .style("fill", function(d) { 
+        var color = color_hash[pdata.indexOf(d)][1];
+        return color;
+      })
+
+      legend.selectAll('text')
+      .data(pdata)
+      .enter()
+      .append("text")
+      .attr("x", width - 25)
+      .attr("y", function(d, i){ return i * 30 + 15;})
+      .text(function(d) {
+        var text = color_hash[pdata.indexOf(d)][2];
+        return text;
+      });
+
+
+    var focus = svg.append("g")
+    .attr("class", "focus")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var context = svg.append("g")
+    .attr("class", "context")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+    xmain.domain(d3.extent(data, function(d) { return d.bmi; }));
+
+    y_axis_range_max_range = d3.extent(data, function(d) { return d.prob_15; });
+    y_axis_range_min_range = d3.extent(data, function(d) { return d.prob_now; });
+    y_axis_range_max = Math.min(1,y_axis_range_max_range[1]*1.1)
+    y_axis_range_min = y_axis_range_min_range[0]*.8
+    ymain.domain([y_axis_range_min,y_axis_range_max]);
+
+
+    xbrush.domain(xmain.domain());
+    ybrush.domain(ymain.domain());
+
+    focus.selectAll('path')
+    .data(pdata)
+    .enter()
+    .append('path')
+    .attr('clip-path', 'url(#clip)')
+    .attr('d', function (prob_when) {
+      return areaMain(prob_when)(data);
+    })
+    .attr('class', function (prob_when) {
+      return "path_" + prob_when + " focusdata";
+    });
+
+    context.selectAll('path')
+    .data(pdata)
+    .enter()
+    .append('path')
+    .attr('clip-path', 'url(#clip)')
+    .attr('fill','none')
+    .attr('d', function (prob_when) {
+      return areaBrush(prob_when)(data);
+    })
+    .attr('class', function (prob_when) {
+      return "path_" + prob_when + " contextdata";
+    });
+
+    focus.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+        .attr("class", "x label")
+        .attr("x", width*.99)
+        .attr("y", -6)
+        .style("text-anchor", "end")
+        .text("Body Mass Index (BMI)");
+
+    focus.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "y label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".75em")
+      .style("text-anchor", "end")
+      .text("Probability of having Type 2 Diabetes");
+
+    context.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height2 + ")")
+      .call(xAxis2)
+       .append("text")
+        .attr("class", "x label")
+        .attr("x", width*.99)
+        .attr("y", -6)
+        .style("text-anchor", "end")
+        .text("Body Mass Index (BMI)");
+
+    context.append("g")
+      .attr("class", "x brush")
+      .call(brush)
+    .selectAll("rect")
+      .attr("y", 15)
+      .attr("height", height2-25);
+
+    // THIS CODE SHOWS THE VALUES OM THE LINE    
+    var bisectBMI = d3.bisector(function(d) { return d.bmi; }).left
+    var formatProb = d3.format(",.2f")
+    var formatBMI = d3.format(",.1f")
+    var three_paths = focus.selectAll("path.focusdata")[0];
+    
+    var focusMarkers = focus.append("g")
+      .attr("class", "focusMarkers")
+      .style("display", "none");
+
+    focusMarkers.selectAll("g")
+      .data(pdata)
+      .enter()
+      .append("g")
+      .attr("id", function(d, i) { 
+        return "focusMarker_"+d;
+      })
+      .append("circle")
+      .attr("r", 10)
+
+    focusMarkers.select("g").append("text")
+      .attr("x", -205)
+      .attr("y",35-50)
+      .attr("dy", ".35em")
+      .attr("id","prob_now_circle_label")
+      .attr("stroke","black")
+      .attr("stroke-width","1px");
+
+    focusMarkers.select("g").append("text")
+      .attr("x", -205)
+      .attr("y",0-50)
+      .attr("dy", ".35em")
+      .attr("id","prob_5_circle_label")
+      .attr("stroke","black")
+      .attr("stroke-width","1px");
+
+    focusMarkers.select("g").append("text")
+      .attr("x", -205)
+      .attr("y",-35-50)
+      .attr("dy", ".35em")
+      .attr("id","prob_15_circle_label")
+      .attr("stroke","black")
+      .attr("stroke-width","1px");
+
+    focus.append("rect")
+      .attr("class", "overlay")
+      .attr("width", width)
+      .attr("height", height)
+      .on("mouseover", function() { focusMarkers.style("display", null); })
+      .on("mouseout", function() { focusMarkers.style("display", "none"); })
+      .on("mousemove", mousemove);
+
+    var verticalLine = focus.append('line')
+
+    .attr({
+      'x1': 0,
+      'y1': 0,
+      'x2': 0,
+      'y2': height
+    })
+      .attr("stroke", "steelblue")
+      .attr('class', 'verticalLine');
+
+    function mousemove() {
+
+        var x0 = xmain.invert(d3.mouse(this)[0]),
+            i = bisectBMI(data, x0, 1),
+            d0 = data[i - 1],
+            d1 = data[i],
+            d = x0 - d0.bmi > d1.bmi - x0 ? d1 : d0;
+    
+    
+        xLoc = xmain(d.bmi)
+    
+        focusMarkers.select("#focusMarker_prob_now")
+        .attr("transform", "translate(" + xLoc + "," + ymain(d.prob_now) + ")");
+    
+        focusMarkers.select("#prob_now_circle_label")
+        .text("Current Risk: " + formatProb(d.prob_now));
+    
+    
+    
+        focusMarkers.select("#focusMarker_prob_5")
+        .attr("transform", "translate(" + xLoc + "," + ymain(d.prob_5) + ")");
+    
+        focusMarkers.select("#prob_5_circle_label")
+        .text("Risk in 5 years: " + formatProb(d.prob_5));
+    
+    
+    
+        focusMarkers.select("#focusMarker_prob_15")
+        .attr("transform", "translate(" + xLoc + "," + ymain(d.prob_15) + ")");
+    
+            focusMarkers.select("#prob_15_circle_label")
+        .text("Risk in 15 years: " + formatProb(d.prob_15));
+    
+    
+         d3.select(".verticalLine").attr("transform", function () {
+         return "translate(" + xLoc + ",0)";
+          });
+
+    }
+
+    </script>
+</body>
+</html>
