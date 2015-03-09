@@ -25,13 +25,18 @@
 
     .ageslider, .genderButtons {
     font: 16px sans-serif;
-    margin-left:100px;
-    margin-right:100px;
+    margin-left: auto;
+    margin-right: auto;
     height: 15px;
     float: left;
     text-align: center;
     font-weight: bold;
     }
+
+     .ageslider {
+        margin-right: 10%;
+
+     }
 
 
     .overlay {
@@ -93,14 +98,14 @@
         <p class="ageslider"><label for="nAge">
         <!--          style="display: inline-block; width: 340px; text-align: right" -->
          Age: <span id="nAge-value">…</span><br></label> <input id="nAge" max=
-        "100" min="5" style="width: 150px;" type="range"></p>
+        "100" min="5" style="width: 100px;" type="range"></p>
 
 
         <div id="gender-controls">
             <p class="genderButtons"><input checked id="nGender-male" name=
-            "gender" style="width: 30px;" type="radio" value="1" align="left"> <label for=
+            "gender" style="width: 10px;" type="radio" value="1" align="left"> <label for=
             "nGender-male">Male</label> <input id="nGender-female" name=
-            "gender" style="width: 30px;" type="radio" value="0" align="left"> <label for=
+            "gender" style="width: 10px;" type="radio" value="0" align="left"> <label for=
             "nGender-female">Female</label></p>
         </div>
     </div>
