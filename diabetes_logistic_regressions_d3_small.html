@@ -24,8 +24,8 @@
     }
 
     .ageslider, .genderButtons {
-    font: 20px sans-serif;
-    margin-left: 15%;
+    font: 18px sans-serif;
+    margin-left: 8%;
     height: 15px;
     float: left;
     text-align: center;
@@ -98,16 +98,17 @@
 
         <p class="ageslider">
           <label for="nAge">Age: <span id="nAge-value">…</span><br></label>
-          <input id="nAge" max="100" min="5" style="width: 140px;" type="range">
+          <input id="nAge" max="100" min="5" style="width: 100px;" type="range">
         </p>
 
         <div id="gender-controls">
             <p class="genderButtons">
-              <input checked id="nGender-male" name="gender" style="width: 15px;" type="radio" value="1" align="left"> 
+              <input checked id="nGender-male" name="gender" style="width: 12px;" type="radio" value="1" align="left"> 
               <label for="nGender-male">Male</label> 
-              <input id="nGender-female" name="gender" style="width: 15px; margin-left:40px;" type="radio" value="0" align="right"> 
+              <input id="nGender-female" name="gender" style="width: 12px; margin-left:20px;" type="radio" value="0" align="right"> 
               <label for="nGender-female">Female</label>
             </p>
+            <br/>
         </div>
     </div>
 
@@ -265,10 +266,10 @@
     //build our canvas
 
     var margin = {top: 10, right: 60, bottom: 120, left: 50},
-    margin2 = {top: 450, right: 60, bottom: 30, left: 50},
-    width = 900 - margin.left - margin.right,
-    height = 550 - margin.top - margin.bottom,
-    height2 = 550 - margin2.top - margin2.bottom;
+    margin2 = {top: 350, right: 60, bottom: 60, left: 50},
+    width = 600 - margin.left - margin.right,
+    height = 450 - margin.top - margin.bottom,
+    height2 = 450 - margin2.top - margin2.bottom;
 
 
     var xmain = d3.scale.linear().range([0, width]);
@@ -327,7 +328,7 @@
       .data(pdata)
       .enter()
       .append("rect")
-      .attr("x", width-55)
+      .attr("x", width+225)
       .attr("y", function(d, i){ return i *  30;})
       .attr("width", 20)
       .attr("height", 20)
@@ -340,7 +341,7 @@
       .data(pdata)
       .enter()
       .append("text")
-      .attr("x", width - 25)
+      .attr("x", width + 255)
       .attr("y", function(d, i){ return i * 30 + 15;})
       .text(function(d) {
         var text = color_hash[pdata.indexOf(d)][2];
